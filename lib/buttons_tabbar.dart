@@ -5,7 +5,7 @@ const double _kTabHeight = 46.0;
 
 class ButtonsTabBar extends StatefulWidget implements PreferredSizeWidget {
   ButtonsTabBar({
-    Key? key,
+    super.key,
     required this.tabs,
     this.controller,
     this.duration = 250,
@@ -26,133 +26,55 @@ class ButtonsTabBar extends StatefulWidget implements PreferredSizeWidget {
     this.radius = 7.0,
     this.elevation = 0,
     this.height = _kTabHeight,
-    this.width = null,
+    this.width,
     this.center = false,
     this.contentCenter = false,
     this.onTap,
-  }) : super(key: key) {
+    // 新增 onTabAdded 回调，当用户点击“+”按钮时触发
+    this.icons,
+    this.onTabAdded,
+    this.minimumSize,
+    this.onIconTap,
+  }) {
     assert(backgroundColor == null || decoration == null);
     assert(unselectedBackgroundColor == null || unselectedDecoration == null);
   }
 
-  /// Typically a list of two or more [Tab] widgets.
-  ///
-  /// The length of this list must match the [controller]'s [TabController.length]
-  /// and the length of the [TabBarView.children] list.
+  /// Tab 列表
   final List<Widget> tabs;
 
-  /// This widget's selection and animation state.
-  ///
-  /// If [TabController] is not provided, then the value of [DefaultTabController.of]
-  /// will be used.
+  /// TabController，如果不提供，则通过 DefaultTabController 获取
   final TabController? controller;
 
-  /// The duration in milliseconds of the transition animation.
+  /// 切换动画时长（毫秒）
   final int duration;
-
-  /// The background [Color] of the button on its selected state.
-  ///
-  /// If [Color] is not provided, [Theme.of(context).accentColor] is used.
+  final List<Widget>? icons;
   final Color? backgroundColor;
-
-  /// The background [Color] of the button on its unselected state.
-  ///
-  /// If [Color] is not provided, [Colors.grey[300]] is used.
   final Color? unselectedBackgroundColor;
-
-  /// The splash [Color] of the button.
-  ///
-  /// If [Color] is not provided, the default is used.
   final Color? splashColor;
-
-  /// The [BoxDecoration] of the button on its selected state.
-  ///
-  /// If [BoxDecoration] is not provided, [backgroundColor] is used.
   final BoxDecoration? decoration;
-
-  /// The [BoxDecoration] of the button on its unselected state.
-  ///
-  /// If [BoxDecoration] is not provided, [unselectedBackgroundColor] is used.
   final BoxDecoration? unselectedDecoration;
-
-  /// The [TextStyle] of the button's [Text] on its selected state. The color provided
-  /// on the TextStyle will be used for the [Icon]'s color.
-  ///
-  /// The default value is: [TextStyle(color: Colors.white)].
   final TextStyle? labelStyle;
-
-  /// The [TextStyle] of the button's [Text] on its unselected state. The color provided
-  /// on the TextStyle will be used for the [Icon]'s color.
-  ///
-  /// The default value is: [TextStyle(color: Colors.black)].
   final TextStyle? unselectedLabelStyle;
-
-  /// The with of solid [Border] for each button. If no value is provided, the border
-  /// is not drawn.
-  ///
-  /// The default value is: 0.
   final double borderWidth;
-
-  /// The [Color] of solid [Border] for each button.
-  ///
-  /// The default value is: [Colors.black].
   final Color borderColor;
-
-  /// The [Color] of solid [Border] for each button. If no value is provided, the value of
-  /// [this.borderColor] is used.
-  ///
-  /// The default value is: [Colors.black].
   final Color unselectedBorderColor;
-
-  /// The physics used for the [ScrollController] of the tabs list.
-  ///
-  /// The default value is [BouncingScrollPhysics].
   final ScrollPhysics physics;
-
-  /// The [EdgeInsets] used for the [Padding] of the buttons' content.
-  ///
-  /// The default value is [EdgeInsets.symmetric(horizontal: 4)].
   final EdgeInsets contentPadding;
-
-  /// The [EdgeInsets] used for the [Margin] of the buttons.
-  ///
-  /// The default value is [EdgeInsets.all(4)].
   final EdgeInsets buttonMargin;
-
-  /// The spacing between the [Icon] and the [Text]. If only one of those is provided,
-  /// no spacing is applied.
   final double labelSpacing;
-
-  /// The value of the [BorderRadius.circular] applied to each button.
   final double radius;
-
-  /// The value of the [elevation] applied to each button.
   final double elevation;
-
-  /// Override the default height.
-  ///
-  /// If no value is provided, the material height, 46.0, is used. If height is [null],
-  /// the height is computed by summing the material height, 46, and the vertical values
-  /// for [contentPadding] and [buttonMargin].
   final double? height;
   final double? width;
-
-  /// Center the tab buttons
+  final Size? minimumSize;
   final bool center;
-
-  /// Center the content of tab
   final bool contentCenter;
-
-  /// An optional callback that's called when the [TabBar] is tapped.
-  ///
-  /// The callback is applied to the index of the tab where the tap occurred.
-  ///
-  /// This callback has no effect on the default handling of taps. It's for
-  /// applications that want to do a little extra work when a tab is tapped,
-  /// even if the tap doesn't change the [TabController]'s index. [TabBar] onTap
-  /// callbacks should not make changes to the [TabController] since that would
-  /// interfere with the default tap handler.
   final void Function(int)? onTap;
+  Function(int, int)? onIconTap;
+
+  /// 新增回调，点击“+”按钮时触发，参数为新增的 Tab Widget
+  final Function(Widget)? onTabAdded;
 
   @override
   Size get preferredSize {
@@ -161,29 +83,22 @@ class ButtonsTabBar extends StatefulWidget implements PreferredSizeWidget {
   }
 
   @override
-  _ButtonsTabBarState createState() => _ButtonsTabBarState();
+  State<ButtonsTabBar> createState() => _ButtonsTabBarState();
 }
 
 class _ButtonsTabBarState extends State<ButtonsTabBar>
     with TickerProviderStateMixin {
   TabController? _controller;
-
   final ScrollController _scrollController = ScrollController();
-
   late AnimationController _animationController;
-
   late List<GlobalKey> _tabKeys;
   final GlobalKey _tabsContainerKey = GlobalKey();
   final GlobalKey _tabsParentKey = GlobalKey();
-
   int _currentIndex = 0;
   int _prevIndex = -1;
   int _aniIndex = 0;
   double _prevAniValue = 0;
-
-  // check the direction of the text LTR or RTL
   late bool _textLTR;
-
   EdgeInsets _centerPadding = EdgeInsets.zero;
 
   @override
@@ -191,13 +106,9 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     super.initState();
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _getCenterPadding(context));
-
     _tabKeys = widget.tabs.map((Widget tab) => GlobalKey()).toList();
-
     _animationController = AnimationController(
         vsync: this, duration: Duration(milliseconds: widget.duration));
-
-    // so the buttons start in their "final" state (color)
     _animationController.value = 1.0;
     _animationController.addListener(() {
       setState(() {});
@@ -205,21 +116,17 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
   }
 
   void _updateTabController() {
-    final TabController? newController =
+    final TabController newController =
         widget.controller ?? DefaultTabController.of(context);
     assert(() {
       if (newController == null) {
         throw FlutterError('No TabController for ${widget.runtimeType}.\n'
-            'When creating a ${widget.runtimeType}, you must either provide an explicit '
-            'TabController using the "controller" property, or you must ensure that there '
-            'is a DefaultTabController above the ${widget.runtimeType}.\n'
-            'In this case, there was neither an explicit controller nor a default controller.');
+            'You must provide a TabController via the "controller" property, or ensure a DefaultTabController exists.');
       }
       return true;
     }());
 
     if (newController == _controller) return;
-
     if (_controllerIsValid) {
       _controller?.animation!.removeListener(_handleTabAnimation);
       _controller?.removeListener(_handleController);
@@ -229,13 +136,10 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     _controller?.addListener(_handleController);
     _currentIndex = _controller!.index;
     Future.delayed(Duration.zero, () {
-        _scrollTo(_currentIndex);
+      _scrollTo(_currentIndex);
     });
   }
 
-  // If the TabBar is rebuilt with a new tab controller, the caller should
-  // dispose the old one. In that case the old controller's animation will be
-  // null and should not be accessed.
   bool get _controllerIsValid => _controller?.animation != null;
 
   @override
@@ -249,21 +153,14 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
   void didUpdateWidget(ButtonsTabBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.controller != oldWidget.controller) {
+      _tabKeys.add(GlobalKey());
       _updateTabController();
     }
-
     if (widget.tabs.length > oldWidget.tabs.length) {
       final int delta = widget.tabs.length - oldWidget.tabs.length;
       _tabKeys.addAll(List<GlobalKey>.generate(delta, (int n) => GlobalKey()));
     } else if (widget.tabs.length < oldWidget.tabs.length) {
       _tabKeys.removeRange(widget.tabs.length, oldWidget.tabs.length);
-    }
-  }
-
-  void _handleController() {
-    if (_controller!.indexIsChanging) {
-      // update highlighted index when controller index is changing
-      _goToIndex(_controller!.index);
     }
   }
 
@@ -280,26 +177,20 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
   }
 
   _getCenterPadding(BuildContext context) {
-    // get the screen width. This is used to check if we have an element off screen
     final RenderBox tabsParent =
         _tabsParentKey.currentContext!.findRenderObject() as RenderBox;
     final double screenWidth = tabsParent.size.width;
-
     RenderBox renderBox =
         _tabKeys.first.currentContext?.findRenderObject() as RenderBox;
     double size = renderBox.size.width;
     final double left = (screenWidth - size) / 2;
-
     renderBox = _tabKeys.last.currentContext?.findRenderObject() as RenderBox;
     size = renderBox.size.width;
     final double right = (screenWidth - size) / 2;
     _centerPadding = EdgeInsets.only(left: left, right: right);
   }
 
-  Widget _buildButton(
-    int index,
-    Tab tab,
-  ) {
+  Widget _buildButton(int index, Tab tab) {
     final double animationValue;
     if (index == _currentIndex) {
       animationValue = _animationController.value;
@@ -308,7 +199,6 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     } else {
       animationValue = 0;
     }
-
     final TextStyle? textStyle = TextStyle.lerp(
         widget.unselectedLabelStyle ?? const TextStyle(color: Colors.black),
         widget.labelStyle ?? const TextStyle(color: Colors.white),
@@ -316,7 +206,6 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     final Color? borderColor = Color.lerp(
         widget.unselectedBorderColor, widget.borderColor, animationValue);
     final Color foregroundColor = textStyle?.color ?? Colors.black;
-
     final BoxDecoration? boxDecoration = BoxDecoration.lerp(
         BoxDecoration(
           color: widget.unselectedDecoration?.color ??
@@ -337,9 +226,7 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
               BorderRadius.circular(widget.radius),
         ),
         animationValue);
-
     EdgeInsets margin;
-
     if (index == 0) {
       margin = EdgeInsets.only(
         top: widget.buttonMargin.top,
@@ -362,36 +249,33 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
         right: widget.buttonMargin.right / 2,
       );
     }
-
     return Padding(
       key: _tabKeys[index],
-      // padding for the buttons
       padding: margin,
       child: ElevatedButton(
         onPressed: () {
           _controller?.animateTo(index);
           if (widget.onTap != null) widget.onTap!(index);
         },
-        style: ButtonStyle(
-          elevation: WidgetStateProperty.all(widget.elevation),
-          minimumSize: WidgetStateProperty.all(const Size(40, 40)),
-          padding: WidgetStateProperty.all(EdgeInsets.zero),
-          textStyle: WidgetStateProperty.all(textStyle),
+        style: ElevatedButton.styleFrom(
+          elevation: widget.elevation,
+          minimumSize: const Size(40, 30),
+          padding: EdgeInsets
+              .zero, //const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+          textStyle: textStyle,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          shape: WidgetStateProperty.all(
-            RoundedRectangleBorder(
-              side: (widget.borderWidth == 0)
-                  ? BorderSide.none
-                  : BorderSide(
-                      color: borderColor ?? Colors.black,
-                      width: widget.borderWidth,
-                      style: BorderStyle.solid,
-                    ),
-              borderRadius: BorderRadius.circular(widget.radius),
-            ),
+          shape: RoundedRectangleBorder(
+            side: (widget.borderWidth == 0)
+                ? BorderSide.none
+                : BorderSide(
+                    color: borderColor ?? Colors.black,
+                    width: widget.borderWidth,
+                    style: BorderStyle.solid,
+                  ),
+            borderRadius: BorderRadius.circular(widget.radius),
           ),
-          backgroundColor: WidgetStateProperty.all(Colors.transparent),
-          overlayColor: WidgetStateProperty.all(widget.splashColor),
+          backgroundColor: Colors.transparent,
+          overlayColor: widget.splashColor,
         ),
         child: Ink(
           decoration: boxDecoration,
@@ -403,29 +287,47 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
                   ? MainAxisAlignment.start
                   : MainAxisAlignment.center,
               children: <Widget>[
-                tab.icon != null
-                    ? IconTheme.merge(
-                        data: IconThemeData(size: 24.0, color: foregroundColor),
-                        child: tab.icon!)
-                    : Container(),
-                SizedBox(
-                  width: tab.icon == null ||
-                          (tab.text == null && tab.child == null)
-                      ? 0
-                      : widget.labelSpacing,
-                ),
                 tab.text != null
                     ? Text(
                         tab.text!,
                         style: textStyle,
                       )
-                    : (tab.child ?? Container())
+                    : (tab.child ?? Container()),
+                SizedBox(
+                  width: (tab.text == null && tab.child == null)
+                      ? 0
+                      : widget.labelSpacing,
+                ),
+                ...buildIcons(index),
+                // _currentIndex == index
+                //     ? (tab.icon != null
+                //         ? IconTheme.merge(
+                //             data: IconThemeData(
+                //                 size: 24.0, color: foregroundColor),
+                //             child: tab.icon!)
+                //         : Container())
+                //     : Container(),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  List<Widget> buildIcons(int index) {
+    List<Widget> icons = [];
+    if (widget.icons != null) {
+      for (int i = 0; i < widget.icons!.length; i++) {
+        icons.add(GestureDetector(
+          onTap: () => widget.onIconTap?.call(index, i),
+          child: widget.icons![i],
+        ));
+      }
+    }
+
+    final results = _currentIndex == index ? icons : [Container()];
+    return results;
   }
 
   @override
@@ -439,10 +341,8 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
       return true;
     }());
     if (_controller!.length == 0) return Container(height: widget.height);
-
     _textLTR = Directionality.of(context).index == 1;
     return Opacity(
-      // avoid showing the tabBar if centering was request and the centerPadding wasn't calculated yet
       opacity: (!widget.center || _centerPadding != EdgeInsets.zero) ? 1 : 0,
       child: AnimatedBuilder(
         animation: _animationController,
@@ -457,12 +357,29 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
             padding: widget.center ? _centerPadding : EdgeInsets.zero,
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: List.generate(
-                widget.tabs.length,
-                (int index) => SizedBox(
+              children: [
+                ...List.generate(
+                  widget.tabs.length,
+                  (int index) => SizedBox(
                     width: widget.width,
-                    child: _buildButton(index, widget.tabs[index] as Tab)),
-              ),
+                    child: _buildButton(index, widget.tabs[index] as Tab),
+                  ),
+                ),
+                // 如果提供了 onTabAdded 回调，则在末尾显示一个“+”按钮
+                if (widget.onTabAdded != null)
+                  Padding(
+                    padding: widget.buttonMargin,
+                    child: IconButton(
+                      icon: Icon(Icons.add),
+                      onPressed: () {
+                        // 这里生成一个默认的新 Tab，可以根据需求修改
+                        final newTab =
+                            Tab(text: 'New Tab', icon: Icon(Icons.fiber_new));
+                        widget.onTabAdded!(newTab);
+                      },
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -470,7 +387,6 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     );
   }
 
-  // runs during the switching tabs animation
   _handleTabAnimation() {
     _aniIndex = ((_controller!.animation!.value > _prevAniValue)
             ? _controller!.animation!.value
@@ -482,6 +398,12 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     _prevAniValue = _controller!.animation!.value;
   }
 
+  _handleController() {
+    if (_controller!.indexIsChanging) {
+      _goToIndex(_controller!.index);
+    }
+  }
+
   _goToIndex(int index) {
     if (index != _currentIndex) {
       _setCurrentIndex(index);
@@ -490,77 +412,48 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
   }
 
   _setCurrentIndex(int index) {
-    // change the index
     setState(() {
       _prevIndex = _currentIndex;
       _currentIndex = index;
     });
-    _scrollTo(index); // scroll TabBar if needed
+    _scrollTo(index);
     _triggerAnimation();
   }
 
   _triggerAnimation() {
-    // reset the animation so it's ready to go
     _animationController.reset();
-
-    // run the animation!
     _animationController.forward();
   }
 
   _scrollTo(int index) {
-    // get the screen width. This is used to check if we have an element off screen
     final RenderBox tabsContainer =
         _tabsContainerKey.currentContext!.findRenderObject() as RenderBox;
     double screenWidth = tabsContainer.size.width;
     final tabsContainerPosition = tabsContainer.localToGlobal(Offset.zero).dx;
-    // get the TabsContainer offset (for cases when padding is used)
     final tabsContainerOffset = Offset(-tabsContainerPosition, 0);
-
-    // get the button we want to scroll to
     RenderBox renderBox =
         _tabKeys[index].currentContext?.findRenderObject() as RenderBox;
-    // get its size
     double size = renderBox.size.width;
-    // and position
     double position = renderBox.localToGlobal(tabsContainerOffset).dx;
-
-    // this is how much the button is away from the center of the screen and how much we must scroll to get it into place
     double offset = (position + size / 2) - screenWidth / 2;
-
-    // if the button is to the left of the middle
     if (offset < 0) {
-      // get the first button
       renderBox = (_textLTR ? _tabKeys.first : _tabKeys.last)
           .currentContext
           ?.findRenderObject() as RenderBox;
-      //// get the position of the first button of the TabBar
       position = renderBox.localToGlobal(tabsContainerOffset).dx;
-
-      // if the offset pulls the first button away from the left side, we limit that movement so the first button is stuck to the left side
       if (!widget.center && position > offset) offset = position;
     } else {
-      // if the button is to the right of the middle
-
-      // get the last button
       renderBox = (_textLTR ? _tabKeys.last : _tabKeys.first)
           .currentContext
           ?.findRenderObject() as RenderBox;
-      // get its position
       position = renderBox.localToGlobal(tabsContainerOffset).dx;
-      // and size
       size = renderBox.size.width;
-
-      // if the last button doesn't reach the right side, use it's right side as the limit of the screen for the TabBar
       if (position + size < screenWidth) screenWidth = position + size;
-
-      // if the offset pulls the last button away from the right side limit, we reduce that movement so the last button is stuck to the right side limit
       if (!widget.center && position + size - offset < screenWidth) {
         offset = position + size - screenWidth;
       }
     }
     offset *= (_textLTR ? 1 : -1);
-
-    // scroll the calculated ammount
     _scrollController.animateTo(offset + _scrollController.offset,
         duration: Duration(milliseconds: widget.duration),
         curve: Curves.easeInOut);
