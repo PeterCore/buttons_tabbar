@@ -1,3 +1,5 @@
+library buttons_tabbar;
+
 import 'package:flutter/material.dart';
 
 // Default values from the Flutter's TabBar.
