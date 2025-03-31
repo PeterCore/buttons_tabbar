@@ -1,6 +1,5 @@
+import 'package:buttons_tabbar/buttons_tabbar.dart';
 import 'package:flutter/material.dart';
-
-import 'buttons_tabbar.dart';
 
 const Color pinkColor = Color(0xFFFA82BF);
 const Color pinkBgColor = Color(0xFFFFF1F8);
