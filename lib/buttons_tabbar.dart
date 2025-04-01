@@ -90,7 +90,7 @@ class ButtonsTabBar extends StatefulWidget implements PreferredSizeWidget {
   final CustomBoxDecoration? unselectCustomBoxDecoration;
 
   final void Function(int)? onTap;
-  Function(int, int)? onIconTap;
+  Function(int, int, List<GlobalKey> tabKeys)? onIconTap;
   Function(int index)? onActionTap;
 
   @override
@@ -342,14 +342,6 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
                       : widget.labelSpacing,
                 ),
                 ...buildIcons(index),
-                // _currentIndex == index
-                //     ? (tab.icon != null
-                //         ? IconTheme.merge(
-                //             data: IconThemeData(
-                //                 size: 24.0, color: foregroundColor),
-                //             child: tab.icon!)
-                //         : Container())
-                //     : Container(),
               ],
             ),
           ),
@@ -401,19 +393,6 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
                 ),
               ),
               ...buildActions()
-              // if (widget.onTabAdded != null)
-              //   Padding(
-              //     padding: widget.buttonMargin,
-              //     child: IconButton(
-              //       icon: Icon(Icons.add),
-              //       onPressed: () {
-              //         // 这里生成一个默认的新 Tab，可以根据需求修改
-              //         final newTab =
-              //             Tab(text: 'New Tab', icon: Icon(Icons.fiber_new));
-              //         widget.onTabAdded!(newTab);
-              //       },
-              //     ),
-              //   ),
             ],
           ),
         ),
@@ -443,7 +422,7 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
       }
       for (int i = 0; i < widget.icons!.length; i++) {
         icons.add(GestureDetector(
-          onTap: () => widget.onIconTap?.call(index, i),
+          onTap: () => widget.onIconTap?.call(index, i, _tabKeys),
           child: widget.icons![i],
         ));
       }
