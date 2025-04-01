@@ -3,47 +3,61 @@ library buttons_tabbar;
 import 'package:flutter/material.dart';
 
 // Default values from the Flutter's TabBar.
+
+class CustomBoxDecoration {
+  int index;
+  BoxDecoration? decoration;
+
+  CustomBoxDecoration({
+    required this.index,
+    this.decoration,
+  });
+}
+
 const double _kTabHeight = 46.0;
 
 class ButtonsTabBar extends StatefulWidget implements PreferredSizeWidget {
-  ButtonsTabBar({
-    super.key,
-    required this.tabs,
-    this.controller,
-    this.duration = 250,
-    this.backgroundColor,
-    this.unselectedBackgroundColor,
-    this.decoration,
-    this.unselectedDecoration,
-    this.labelStyle,
-    this.unselectedLabelStyle,
-    this.splashColor,
-    this.borderWidth = 0,
-    this.borderColor = Colors.black,
-    this.unselectedBorderColor = Colors.black,
-    this.physics = const BouncingScrollPhysics(),
-    this.contentPadding = const EdgeInsets.symmetric(horizontal: 4),
-    this.buttonMargin = const EdgeInsets.all(4),
-    this.labelSpacing = 4.0,
-    this.radius = 7.0,
-    this.elevation = 0,
-    this.height = _kTabHeight,
-    this.width,
-    this.center = false,
-    this.contentCenter = false,
-    this.onTap,
-    // 新增 onTabAdded 回调，当用户点击“+”按钮时触发
-    this.icons,
-    this.onTabAdded,
-    this.minimumSize,
-    this.onIconTap,
-  }) {
+  ButtonsTabBar(
+      {super.key,
+      required this.tabs,
+      this.controller,
+      this.duration = 250,
+      this.backgroundColor,
+      this.unselectedBackgroundColor,
+      this.decoration,
+      this.unselectedDecoration,
+      this.labelStyle,
+      this.unselectedLabelStyle,
+      this.splashColor,
+      this.borderWidth = 0,
+      this.borderColor = Colors.black,
+      this.unselectedBorderColor = Colors.black,
+      this.physics = const BouncingScrollPhysics(),
+      this.contentPadding = const EdgeInsets.symmetric(horizontal: 4),
+      this.buttonMargin = const EdgeInsets.all(4),
+      this.labelSpacing = 4.0,
+      this.radius = 7.0,
+      this.elevation = 0,
+      this.height = _kTabHeight,
+      this.width,
+      this.center = false,
+      this.contentCenter = false,
+      this.onTap,
+      // 新增 onTabAdded 回调，当用户点击“+”按钮时触发
+      this.icons,
+      this.minimumSize,
+      this.onIconTap,
+      this.onActionTap,
+      this.actions,
+      this.customBoxDecoration,
+      this.unselectCustomBoxDecoration}) {
     assert(backgroundColor == null || decoration == null);
     assert(unselectedBackgroundColor == null || unselectedDecoration == null);
   }
 
   /// Tab 列表
   final List<Widget> tabs;
+  List<Widget>? actions;
 
   /// TabController，如果不提供，则通过 DefaultTabController 获取
   final TabController? controller;
@@ -72,11 +86,12 @@ class ButtonsTabBar extends StatefulWidget implements PreferredSizeWidget {
   final Size? minimumSize;
   final bool center;
   final bool contentCenter;
+  final CustomBoxDecoration? customBoxDecoration;
+  final CustomBoxDecoration? unselectCustomBoxDecoration;
+
   final void Function(int)? onTap;
   Function(int, int)? onIconTap;
-
-  /// 新增回调，点击“+”按钮时触发，参数为新增的 Tab Widget
-  final Function(Widget)? onTabAdded;
+  Function(int index)? onActionTap;
 
   @override
   Size get preferredSize {
@@ -192,6 +207,36 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     _centerPadding = EdgeInsets.only(left: left, right: right);
   }
 
+  BorderRadiusGeometry? _buildBoxDecoration(int index) {
+    final boxDecoration = widget.customBoxDecoration;
+    if (boxDecoration != null) {
+      if (boxDecoration.index == index) {
+        return boxDecoration.decoration?.borderRadius;
+      } else {
+        return widget.decoration?.borderRadius ??
+            BorderRadius.circular(widget.radius);
+      }
+    }
+    final borderRadius =
+        widget.decoration?.borderRadius ?? BorderRadius.circular(widget.radius);
+    return borderRadius;
+  }
+
+  BorderRadiusGeometry? _buildUnSelectedBoxDecoration(int index) {
+    final boxDecoration = widget.unselectCustomBoxDecoration;
+    if (boxDecoration != null) {
+      if (boxDecoration.index == index) {
+        return boxDecoration.decoration?.borderRadius;
+      } else {
+        return widget.decoration?.borderRadius ??
+            BorderRadius.circular(widget.radius);
+      }
+    }
+    final borderRadius =
+        widget.decoration?.borderRadius ?? BorderRadius.circular(widget.radius);
+    return borderRadius;
+  }
+
   Widget _buildButton(int index, Tab tab) {
     final double animationValue;
     if (index == _currentIndex) {
@@ -210,23 +255,19 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     final Color foregroundColor = textStyle?.color ?? Colors.black;
     final BoxDecoration? boxDecoration = BoxDecoration.lerp(
         BoxDecoration(
-          color: widget.unselectedDecoration?.color ??
-              widget.unselectedBackgroundColor ??
-              Colors.grey[300],
-          boxShadow: widget.unselectedDecoration?.boxShadow,
-          gradient: widget.unselectedDecoration?.gradient,
-          borderRadius: widget.unselectedDecoration?.borderRadius ??
-              BorderRadius.circular(widget.radius),
-        ),
+            color: widget.unselectedDecoration?.color ??
+                widget.unselectedBackgroundColor ??
+                Colors.grey[300],
+            boxShadow: widget.unselectedDecoration?.boxShadow,
+            gradient: widget.unselectedDecoration?.gradient,
+            borderRadius: _buildUnSelectedBoxDecoration(index)),
         BoxDecoration(
-          color: widget.decoration?.color ??
-              widget.backgroundColor ??
-              Theme.of(context).colorScheme.secondary,
-          boxShadow: widget.decoration?.boxShadow,
-          gradient: widget.decoration?.gradient,
-          borderRadius: widget.decoration?.borderRadius ??
-              BorderRadius.circular(widget.radius),
-        ),
+            color: widget.decoration?.color ??
+                widget.backgroundColor ??
+                Theme.of(context).colorScheme.secondary,
+            boxShadow: widget.decoration?.boxShadow,
+            gradient: widget.decoration?.gradient,
+            borderRadius: _buildBoxDecoration(index)),
         animationValue);
     EdgeInsets margin;
     if (index == 0) {
@@ -267,15 +308,15 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
           textStyle: textStyle,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           shape: RoundedRectangleBorder(
-            side: (widget.borderWidth == 0)
-                ? BorderSide.none
-                : BorderSide(
-                    color: borderColor ?? Colors.black,
-                    width: widget.borderWidth,
-                    style: BorderStyle.solid,
-                  ),
-            borderRadius: BorderRadius.circular(widget.radius),
-          ),
+              side: (widget.borderWidth == 0)
+                  ? BorderSide.none
+                  : BorderSide(
+                      color: borderColor ?? Colors.black,
+                      width: widget.borderWidth,
+                      style: BorderStyle.solid,
+                    ),
+              borderRadius: _buildBoxDecoration(index) ??
+                  BorderRadius.circular(widget.radius)),
           backgroundColor: Colors.transparent,
           overlayColor: widget.splashColor,
         ),
@@ -317,21 +358,6 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     );
   }
 
-  List<Widget> buildIcons(int index) {
-    List<Widget> icons = [];
-    if (widget.icons != null) {
-      for (int i = 0; i < widget.icons!.length; i++) {
-        icons.add(GestureDetector(
-          onTap: () => widget.onIconTap?.call(index, i),
-          child: widget.icons![i],
-        ));
-      }
-    }
-
-    final results = _currentIndex == index ? icons : [Container()];
-    return results;
-  }
-
   @override
   Widget build(BuildContext context) {
     assert(() {
@@ -352,41 +378,79 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
         builder: (context, child) => SizedBox(
           key: _tabsContainerKey,
           height: widget.preferredSize.height,
-          child: SingleChildScrollView(
-            physics: widget.physics,
-            controller: _scrollController,
-            scrollDirection: Axis.horizontal,
-            padding: widget.center ? _centerPadding : EdgeInsets.zero,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ...List.generate(
-                  widget.tabs.length,
-                  (int index) => SizedBox(
-                    width: widget.width,
-                    child: _buildButton(index, widget.tabs[index] as Tab),
+          child: Row(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: widget.physics,
+                  controller: _scrollController,
+                  scrollDirection: Axis.horizontal,
+                  padding: widget.center ? _centerPadding : EdgeInsets.zero,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ...List.generate(
+                        widget.tabs.length,
+                        (int index) => SizedBox(
+                          width: widget.width,
+                          child: _buildButton(index, widget.tabs[index] as Tab),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                // 如果提供了 onTabAdded 回调，则在末尾显示一个“+”按钮
-                if (widget.onTabAdded != null)
-                  Padding(
-                    padding: widget.buttonMargin,
-                    child: IconButton(
-                      icon: Icon(Icons.add),
-                      onPressed: () {
-                        // 这里生成一个默认的新 Tab，可以根据需求修改
-                        final newTab =
-                            Tab(text: 'New Tab', icon: Icon(Icons.fiber_new));
-                        widget.onTabAdded!(newTab);
-                      },
-                    ),
-                  ),
-              ],
-            ),
+              ),
+              ...buildActions()
+              // if (widget.onTabAdded != null)
+              //   Padding(
+              //     padding: widget.buttonMargin,
+              //     child: IconButton(
+              //       icon: Icon(Icons.add),
+              //       onPressed: () {
+              //         // 这里生成一个默认的新 Tab，可以根据需求修改
+              //         final newTab =
+              //             Tab(text: 'New Tab', icon: Icon(Icons.fiber_new));
+              //         widget.onTabAdded!(newTab);
+              //       },
+              //     ),
+              //   ),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  List<Widget> buildActions() {
+    List<Widget> icons = [];
+    final actions = widget.actions;
+    if (actions != null) {
+      for (int i = 0; i < widget.actions!.length; i++) {
+        icons.add(GestureDetector(
+          onTap: () => widget.onActionTap?.call(i),
+          child: widget.actions![i],
+        ));
+      }
+    }
+    return icons;
+  }
+
+  List<Widget> buildIcons(int index) {
+    List<Widget> icons = [];
+    if (widget.icons != null) {
+      if (index == widget.unselectCustomBoxDecoration?.index) {
+        return icons;
+      }
+      for (int i = 0; i < widget.icons!.length; i++) {
+        icons.add(GestureDetector(
+          onTap: () => widget.onIconTap?.call(index, i),
+          child: widget.icons![i],
+        ));
+      }
+    }
+
+    final results = _currentIndex == index ? icons : [Container()];
+    return results;
   }
 
   _handleTabAnimation() {

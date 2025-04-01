@@ -107,7 +107,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
               controller: _tabController,
-              onTabAdded: _handleTabAdded,
             ),
           ),
         ),
