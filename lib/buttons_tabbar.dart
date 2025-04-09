@@ -50,6 +50,8 @@ class ButtonsTabBar extends StatefulWidget implements PreferredSizeWidget {
       this.onActionTap,
       this.actions,
       this.customBoxDecoration,
+      this.addButton,
+      this.onAddTab,
       this.unselectCustomBoxDecoration}) {
     assert(backgroundColor == null || decoration == null);
     assert(unselectedBackgroundColor == null || unselectedDecoration == null);
@@ -86,11 +88,16 @@ class ButtonsTabBar extends StatefulWidget implements PreferredSizeWidget {
   final Size? minimumSize;
   final bool center;
   final bool contentCenter;
+  final Widget? addButton;
   final CustomBoxDecoration? customBoxDecoration;
   final CustomBoxDecoration? unselectCustomBoxDecoration;
 
   final void Function(int)? onTap;
-  Function(int, int, List<GlobalKey> tabKeys)? onIconTap;
+  final void Function()? onAddTab;
+  Function(
+    int,
+    int,
+  )? onIconTap;
   Function(int index)? onActionTap;
 
   @override
@@ -373,6 +380,7 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
           child: Row(
             children: [
               Expanded(
+                flex: 8,
                 child: SingleChildScrollView(
                   physics: widget.physics,
                   controller: _scrollController,
@@ -388,6 +396,11 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
                           child: _buildButton(index, widget.tabs[index] as Tab),
                         ),
                       ),
+                      GestureDetector(
+                          onTap: () {
+                            widget.onAddTab?.call();
+                          },
+                          child: widget.addButton ?? Container())
                     ],
                   ),
                 ),
@@ -422,7 +435,7 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
       }
       for (int i = 0; i < widget.icons!.length; i++) {
         icons.add(GestureDetector(
-          onTap: () => widget.onIconTap?.call(index, i, _tabKeys),
+          onTap: () => widget.onIconTap?.call(index, i),
           child: widget.icons![i],
         ));
       }
